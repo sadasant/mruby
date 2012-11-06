@@ -13,7 +13,6 @@
 #include "mruby/class.h"
 #include "mruby/string.h"
 #include "mruby/variable.h"
-#include "mruby/object.h"
 #include "mruby/ext/io.h"
 #include "error.h"
 
@@ -329,7 +328,7 @@ rb_io_initialize(mrb_state *mrb, int argc, mrb_value *argv, mrb_value io)
   mode = argv[1];
   fd = mrb_fixnum(fnum);
   if (argc == 2) {
-    if (FIXNUM_P(mode)) {
+    if (mrb_fixnum_p(mode)) {
       flags = mrb_fixnum(mode);
     } else {
       flags = mrb_io_modestr_to_modenum(mrb, mrb_string_value_cstr(mrb, &mode));
@@ -345,6 +344,7 @@ rb_io_initialize(mrb_state *mrb, int argc, mrb_value *argv, mrb_value io)
 
   MakeOpenFile(mrb, io, fp);
   fp->mode = mrb_io_mode_flags(mrb, m);
+  fp->fd = fd;
   fp->f = mrb_fdopen(mrb, fd, m);
   fp->path = path;
 
@@ -432,7 +432,7 @@ fptr_finalize(mrb_state *mrb, struct mrb_io *fptr, int noraise)
   }
 
   errno = 0; /* XXX */
-  if (fptr->f2) {
+  if (fptr->f2 && fptr->fd > 2) {
     f2 = fileno(fptr->f2);
     while (n2 = 0, fflush(fptr->f2) < 0) {
       n2 = errno;
@@ -448,7 +448,7 @@ fptr_finalize(mrb_state *mrb, struct mrb_io *fptr, int noraise)
     fptr->f2 = 0;
   }
 
-  if (fptr->f) {
+  if (fptr->f && fptr->fd > 2) {
     f1 = fileno(fptr->f);
     if ((f2 == -1) && (fptr->mode & FMODE_WBUF)) {
       while (n1 = 0, fflush(fptr->f) < 0) {
@@ -1482,7 +1482,7 @@ mrb_io_s_sysopen(mrb_state *mrb, mrb_value klass)
 
   if (mrb_nil_p(vmode)) {
     oflags = O_RDONLY;
-  } else if (FIXNUM_P(vmode)) {
+  } else if (mrb_fixnum_p(vmode)) {
     oflags = mrb_fixnum(vmode);
   } else {
     oflags = mrb_io_modestr_to_modenum(mrb, mrb_string_value_cstr(mrb, &vmode));
@@ -1522,7 +1522,7 @@ mrb_io_s_popen(mrb_state *mrb, mrb_value klass)
 
   if (mrb_nil_p(pmode)) {
     oflags = O_RDONLY;
-  } else if (FIXNUM_P(pmode)) {
+  } else if (mrb_fixnum_p(pmode)) {
     oflags = mrb_fixnum(pmode);
   } else {
     oflags = mrb_io_modestr_to_modenum(mrb, mrb_string_value_cstr(mrb, &pmode));
@@ -1543,7 +1543,7 @@ mrb_io_s_popen(mrb_state *mrb, mrb_value klass)
     return mrb_nil_value();
   }
 
-  RBASIC(port)->c = mrb_class_ptr(klass);
+  mrb_basic(port)->c = mrb_class_ptr(klass);
   /* XXX: NOT SUPPORTED yet */
   /*
   if (rb_block_given_p()) {
@@ -1704,7 +1704,6 @@ mrb_io_to_io(mrb_state *mrb, mrb_value self)
 static struct timeval
 time2timeval(mrb_state *mrb, mrb_value time)
 {
-  struct mrb_time *tm;
   struct timeval t;
 
   switch (mrb_type(time)) {
@@ -1887,6 +1886,26 @@ retry:
   return result;
 }
 
+static mrb_value
+mrb_io_gets(mrb_state *mrb, mrb_value klass)
+{
+  mrb_value str, b, rs;
+  mrb_value *argv;
+  int argc;
+  long limit;
+
+  mrb_get_args(mrb, "&*", &b, &argv, &argc);
+  prepare_getline_args(mrb, argc, argv, &rs, &limit, klass);
+  str = rb_io_getline(mrb, argc, argv, klass);
+  if (mrb_nil_p(str)) {
+    mrb_gv_set(mrb, mrb_intern(mrb, "$_"), mrb_nil_value());
+  } else {
+    mrb_gv_set(mrb, mrb_intern(mrb, "$_"), mrb_str_dup(mrb, str));
+  }
+
+  return str;
+}
+
 void
 mrb_init_io(mrb_state *mrb)
 {
@@ -1915,6 +1934,8 @@ mrb_init_io(mrb_state *mrb)
 
   mrb_define_method(mrb, io, "initialize", mrb_io_initialize, ARGS_ANY());    /* 15.2.20.5.21 (x)*/
   mrb_define_method(mrb, io, "to_io", mrb_io_to_io, ARGS_NONE()); /* 15.2.20.5.22 (x) */
+
+  mrb_define_method(mrb, io, "gets", mrb_io_gets, ARGS_NONE()); /* ??? */
 
   /* TODO: ADD Kernel Module */
   /* mrb_define_method(mrb, mrb->kernel_module, "open", mrb_io_f_open, ARGS_ANY()); */

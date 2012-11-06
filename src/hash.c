@@ -37,7 +37,7 @@ static void mrb_hash_modify(mrb_state *mrb, mrb_value hash);
 static inline mrb_value
 mrb_hash_ht_key(mrb_state *mrb, mrb_value key)
 {
-  if (mrb_type(key) == MRB_TT_STRING)
+  if (mrb_string_p(key))
     return mrb_str_dup(mrb, key);
   else
     return key;
@@ -756,9 +756,11 @@ mrb_hash_replace(mrb_state *mrb, mrb_value hash)
 
   h2 = RHASH_TBL(hash2);
   if (h2) {
+    int hi = mrb_gc_arena_save(mrb);
     for (k = kh_begin(h2); k != kh_end(h2); k++) {
       if (kh_exist(h2, k))
         mrb_hash_set(mrb, hash, kh_key(h2, k), kh_value(h2, k));
+      mrb_gc_arena_restore(mrb, hi);
     }
   }
 
@@ -1106,7 +1108,7 @@ hash_equal(mrb_state *mrb, mrb_value hash1, mrb_value hash2, int eql)
   khash_t(ht) *h1, *h2;
 
   if (mrb_obj_equal(mrb, hash1, hash2)) return mrb_true_value();
-  if (mrb_type(hash2) != MRB_TT_HASH) {
+  if (!mrb_hash_p(hash2)) {
       if (!mrb_respond_to(mrb, hash2, mrb_intern(mrb, "to_hash"))) {
           return mrb_false_value();
       }
