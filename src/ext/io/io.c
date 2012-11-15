@@ -813,7 +813,7 @@ rb_io_getline_1(mrb_state *mrb, mrb_value rs, long limit, mrb_value io)
       return mrb_nil_value();
   } else if (limit == 0) {
     return mrb_str_new(mrb, 0, 0);
-  } else if (limit < 0) {
+  } else if (RSTRING_LEN(rs) > 0 && limit < 0) {
     return rb_io_getline_fast(mrb, fptr, '\n');
   }
 
@@ -1050,7 +1050,7 @@ retry:
 static void
 prepare_getline_args(mrb_state *mrb, int argc, mrb_value *argv, mrb_value *rsp, long *limit, mrb_value io)
 {
-  mrb_value rs = mrb_str_new_cstr(mrb, "\n");
+  mrb_value rs = mrb_gv_get(mrb, mrb_intern(mrb, "$/"));
   mrb_value lim = mrb_nil_value();
 
   if (argc == 1) {
@@ -1843,13 +1843,11 @@ mrb_io_getc(mrb_state *mrb, mrb_value klass)
 static mrb_value
 mrb_io_gets(mrb_state *mrb, mrb_value klass)
 {
-  mrb_value str, b, rs;
+  mrb_value str;
   mrb_value *argv;
   int argc;
-  long limit;
 
-  mrb_get_args(mrb, "&*", &b, &argv, &argc);
-  prepare_getline_args(mrb, argc, argv, &rs, &limit, klass);
+  mrb_get_args(mrb, "*", &argv, &argc);
   str = rb_io_getline(mrb, argc, argv, klass);
   if (mrb_nil_p(str)) {
     mrb_gv_set(mrb, mrb_intern(mrb, "$_"), mrb_nil_value());
@@ -1891,5 +1889,7 @@ mrb_init_io(mrb_state *mrb)
 
   /* TODO: ADD Kernel Module */
   /* mrb_define_method(mrb, mrb->kernel_module, "open", mrb_io_f_open, ARGS_ANY()); */
+
+  mrb_gv_set(mrb, mrb_intern(mrb, "$/"), mrb_str_new_cstr(mrb, "\n"));
 }
 #endif /* ENABLE_IO */

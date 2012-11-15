@@ -61,6 +61,32 @@ assert('String#[]', '15.2.10.5.6') do
     a3 == 'bc' and b3 == nil
 end
 
+assert('String#[] with Range') do
+  a1 = 'abc'[1..0]
+  b1 = 'abc'[1..1]
+  c1 = 'abc'[1..2]
+  d1 = 'abc'[1..3]
+  e1 = 'abc'[1..4]
+  f1 = 'abc'[0..-2]
+  g1 = 'abc'[-2..3]
+  h1 = 'abc'[3..4]
+  i1 = 'abc'[4..5]
+  a2 = 'abc'[1...0]
+  b2 = 'abc'[1...1]
+  c2 = 'abc'[1...2]
+  d2 = 'abc'[1...3]
+  e2 = 'abc'[1...4]
+  f2 = 'abc'[0...-2]
+  g2 = 'abc'[-2...3]
+  h2 = 'abc'[3...4]
+  i2 = 'abc'[4...5]
+
+  a1 == ''   and b1 == 'b'  and c1 == 'bc' and d1 == 'bc' and e1 == 'bc' and
+  f1 == 'ab' and g1 == 'bc' and h1 == ''   and i2 == nil  and
+  a2 == ''   and b2 == ''   and c2 == 'b'  and d2 == 'bc' and e2 == 'bc' and
+  f2 == 'a'  and g2 == 'bc' and h2 == ''   and i2 == nil
+end
+
 assert('String#capitalize', '15.2.10.5.7') do
   a = 'abc'
   a.capitalize
@@ -410,25 +436,58 @@ assert('Check the usage of a NUL character') do
   "qqq\0ppp"
 end
 
-assert('String strip methods test') do
-  ls = " strip"
-  rs = "strip "
-  bs = " strip "
-  bangs = " strip "
-  tab = "\tstrip\t"
-  cr = "\rstrip\r"
-  lf = "\nstrip\n"
-  res = "strip"
+assert('String#strip') do
+  s = "  abc  " 
+  s.strip
+  "".strip == "" and " \t\r\n\f\v".strip == "" and
+  "\0a\0".strip == "\0a" and
+  "abc".strip     == "abc" and
+  "  abc".strip   == "abc" and
+  "abc  ".strip   == "abc" and
+  "  abc  ".strip == "abc" and
+  s == "  abc  "
+end
 
-  bangs.strip!
+assert('String#lstrip') do
+  s = "  abc  " 
+  s.lstrip
+  "".lstrip == "" and " \t\r\n\f\v".lstrip == "" and
+  "\0a\0".lstrip == "\0a\0" and
+  "abc".lstrip     == "abc"   and
+  "  abc".lstrip   == "abc"   and
+  "abc  ".lstrip   == "abc  " and
+  "  abc  ".lstrip == "abc  " and
+  s == "  abc  "
+end
 
-  ls.lstrip == res and
-  rs.rstrip == res and
-  bs.strip == res and
-  tab.strip ==  res and
-  cr.strip ==  res and
-  lf.strip ==  res and
-  bangs == res
+assert('String#rstrip') do
+  s = "  abc  " 
+  s.rstrip
+  "".rstrip == "" and " \t\r\n\f\v".rstrip == "" and
+  "\0a\0".rstrip == "\0a" and
+  "abc".rstrip     == "abc"   and
+  "  abc".rstrip   == "  abc" and
+  "abc  ".rstrip   == "abc"   and
+  "  abc  ".rstrip == "  abc" and
+  s == "  abc  "
+end
+
+assert('String#strip!') do
+  s = "  abc  "
+  t = "abc"
+  s.strip! == "abc" and s == "abc" and t.strip! == nil
+end
+
+assert('String#lstrip!') do
+  s = "  abc  "
+  t = "abc  "
+  s.lstrip! == "abc  " and s == "abc  " and t.lstrip! == nil
+end
+
+assert('String#rstrip!') do
+  s = "  abc  "
+  t = "  abc"
+  s.rstrip! == "  abc" and s == "  abc" and t.rstrip! == nil
 end
 
 assert('String#bytes') do
