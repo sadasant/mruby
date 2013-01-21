@@ -634,6 +634,8 @@ hex_to_str(char *hex, char *str, uint16_t *str_len)
       case '\?': /* fall through */
       case '\\': *dst++ = *src; break;
       default:
+        memset(buf, 0x00, sizeof(buf));
+
         if (*src >= '0' && *src <= '7') {
           base = 8;
           strncpy(buf, src, 3);
