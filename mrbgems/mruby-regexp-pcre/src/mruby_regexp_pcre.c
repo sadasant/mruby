@@ -73,7 +73,6 @@ regexp_pcre_initialize(mrb_state *mrb, mrb_value self)
   return self;
 }
 
-#define OVECCOUNT 30
 mrb_value
 regexp_pcre_match(mrb_state *mrb, mrb_value self)
 {
