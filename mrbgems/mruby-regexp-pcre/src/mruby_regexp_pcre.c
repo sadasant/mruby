@@ -13,6 +13,11 @@ struct mrb_regexp_pcre {
   pcre *re;
 };
 
+struct mrb_matchdata {
+  mrb_int length;
+  int *ovector;
+};
+
 void
 mrb_regexp_free(mrb_state *mrb, void *ptr)
 {
@@ -22,7 +27,19 @@ mrb_regexp_free(mrb_state *mrb, void *ptr)
     pcre_free(mrb_re->re);
   mrb_free(mrb, mrb_re);
 }
+
+static void
+mrb_matchdata_free(mrb_state *mrb, void *ptr)
+{
+  struct mrb_matchdata *mrb_md = ptr;
+
+  if (mrb_md->ovector != NULL)
+    mrb_free(mrb, mrb_md->ovector);
+  mrb_free(mrb, mrb_md);
+}
+
 static struct mrb_data_type mrb_regexp_type = { "Regexp", mrb_regexp_free };
+static struct mrb_data_type mrb_matchdata_type = { "MatchData", mrb_matchdata_free };
 
 static int
 mrb_mruby_to_pcre_options(mrb_value options)
@@ -77,10 +94,11 @@ regexp_pcre_initialize(mrb_state *mrb, mrb_value self)
 mrb_value
 regexp_pcre_match(mrb_state *mrb, mrb_value self)
 {
+  struct mrb_matchdata *mrb_md;
   int i, rc;
-  int nmatch;
+  int ccount, matchlen, nmatch;
   int *match;
-  struct RClass *m;
+  struct RClass *c;
   mrb_value md, str;
   mrb_int pos;
   struct mrb_regexp_pcre *reg;
@@ -90,49 +108,108 @@ regexp_pcre_match(mrb_state *mrb, mrb_value self)
   if (!reg)
     return mrb_nil_value();
 
+  pos = 0;
   mrb_get_args(mrb, "S|i", &str, &pos);
 
-  rc = pcre_fullinfo(reg->re, NULL, PCRE_INFO_CAPTURECOUNT, &nmatch);
+  // XXX: RSTRING_LEN(str) >= pos ...
+
+  rc = pcre_fullinfo(reg->re, NULL, PCRE_INFO_CAPTURECOUNT, &ccount);
   if (rc < 0) {
     /* fullinfo error */
     return mrb_nil_value();
   }
-
-  nmatch = (nmatch + 1) * 3; /* capture(nmatch) + substring(1) * multiple 3 */
-  match = mrb_malloc(mrb, sizeof(int) * nmatch);
-  rc = pcre_exec(reg->re, NULL, RSTRING_PTR(str), RSTRING_LEN(str), 0, 0, match, nmatch);
+  matchlen = ccount + 1;
+  match = mrb_malloc(mrb, sizeof(int) * matchlen * 3);
+  rc = pcre_exec(reg->re, NULL, RSTRING_PTR(str) + pos, RSTRING_LEN(str) - pos, 0, 0, match, matchlen * 3);
   if (rc < 0) {
     mrb_free(mrb, match);
     return mrb_nil_value();
   }
 
-  m = mrb_class_get(mrb, "MatchData");
-  md = mrb_class_new_instance(mrb, 0, NULL, m);
-  for (i = 0; i < nmatch; i++) {
-    args[0] = mrb_fixnum_value(match[2 * i]);
-    args[1] = mrb_fixnum_value(match[2 * i + 1]);
-    mrb_funcall_argv(mrb, md, mrb_intern(mrb, "push"), sizeof(args) / sizeof(args[0]), &args[0]);
-  }
+  c = mrb_class_get(mrb, "MatchData");
+  md = mrb_funcall(mrb, mrb_obj_value(c), "new", 0);
 
+  mrb_md = (struct mrb_matchdata *)mrb_get_datatype(mrb, md, &mrb_matchdata_type);
+  mrb_md->ovector = match;
+  mrb_md->length = matchlen;
+
+  mrb_iv_set(mrb, md, mrb_intern(mrb, "@length"), mrb_fixnum_value(matchlen));
   mrb_iv_set(mrb, md, mrb_intern(mrb, "@regexp"), self);
-  // XXX: length
-  mrb_iv_set(mrb, md, mrb_intern(mrb, "@length"), mrb_fixnum_value(rc));
   mrb_iv_set(mrb, md, mrb_intern(mrb, "@string"), mrb_str_dup(mrb, str));
 
-  free(match);
   return md;
 }
+
+mrb_value
+mrb_matchdata_init(mrb_state *mrb, mrb_value self)
+{
+  struct mrb_matchdata *mrb_md;
+
+  mrb_md = (struct mrb_matchdata *)mrb_get_datatype(mrb, self, &mrb_matchdata_type);
+  if (mrb_md) {
+    mrb_matchdata_free(mrb, mrb_md);
+  }
+
+  mrb_md = (struct mrb_matchdata *)mrb_malloc(mrb, sizeof(*mrb_md));
+  mrb_md->ovector = NULL;
+  mrb_md->length = -1;
+
+  DATA_PTR(self) = mrb_md;
+  DATA_TYPE(self) = &mrb_matchdata_type;
+
+  return self;
+}
+
+mrb_value
+mrb_matchdata_begin(mrb_state *mrb, mrb_value self)
+{
+  struct mrb_matchdata *mrb_md;
+  mrb_int n;
+
+  mrb_md = (struct mrb_matchdata *)mrb_get_datatype(mrb, self, &mrb_matchdata_type);
+  if (!mrb_md) return mrb_nil_value();
+
+  mrb_get_args(mrb, "i", &n);
+  if (n < 0 || n >= mrb_md->length)
+    mrb_raisef(mrb, E_INDEX_ERROR, "index %d out of matches", n);
+
+  return mrb_fixnum_value((mrb_int)mrb_md->ovector[n*2]);
+}
+
+mrb_value
+mrb_matchdata_end(mrb_state *mrb, mrb_value self)
+{
+  struct mrb_matchdata *mrb_md;
+  mrb_int n;
+
+  mrb_md = (struct mrb_matchdata *)mrb_get_datatype(mrb, self, &mrb_matchdata_type);
+  if (!mrb_md) return mrb_nil_value();
+
+  mrb_get_args(mrb, "i", &n);
+  if (n < 0 || n >= mrb_md->length)
+    mrb_raisef(mrb, E_INDEX_ERROR, "index %d out of matches", n);
+
+  return mrb_fixnum_value((mrb_int)mrb_md->ovector[n*2 + 1]);
+}
+
 
 void
 mrb_mruby_regexp_pcre_gem_init(mrb_state *mrb)
 {
-  struct RClass *re;
+  struct RClass *re, *md;
 
   re = mrb_define_class(mrb, "Regexp", mrb->object_class);
   MRB_SET_INSTANCE_TT(re, MRB_TT_DATA);
 
   mrb_define_method(mrb, re, "initialize", regexp_pcre_initialize, ARGS_REQ(1) | ARGS_OPT(2));
   mrb_define_method(mrb, re, "match", regexp_pcre_match, ARGS_REQ(1));
+
+  md = mrb_define_class(mrb, "MatchData", mrb->object_class);
+  MRB_SET_INSTANCE_TT(md, MRB_TT_DATA);
+
+  mrb_define_method(mrb, md, "initialize", mrb_matchdata_init, ARGS_REQ(1));
+  mrb_define_method(mrb, md, "begin", mrb_matchdata_begin, ARGS_REQ(1));
+  mrb_define_method(mrb, md, "end", mrb_matchdata_end, ARGS_REQ(1));
 }
 
 void
