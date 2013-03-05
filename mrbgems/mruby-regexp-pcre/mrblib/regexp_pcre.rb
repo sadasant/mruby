@@ -37,37 +37,42 @@ class MatchData
   attr_reader :regexp
   attr_reader :string
 
-  def initialize
-    @data = []
-    @string = ""
-    @regexp = nil
-    @length = 0
-  end
-
   def [](n)
-    if n < @length
-      b = self.begin(n)
-      e = self.end(n)
-      @string[b, e-b]
-    else
-      nil
+    # XXX: if n is_a? Range
+    # XXX: when we have 2nd argument...
+    if n < 0
+      n += @length
+      return nil if n < 0
+    elsif n >= @length
+      return nil
     end
-  end
-
-  def captures
-    self.to_a[1, @length]
-  end
-
-  def offset(n)
-    [self.begin(n), self.end(n)]
+    b = self.begin(n)
+    e = self.end(n)
+    @string[b, e-b]
   end
 
   def begin(index)
     @data[index][:start] if @data[index]
   end
 
+  def captures
+    self.to_a[1, @length]
+  end
+
   def end(index)
     @data[index][:finish]
+  end
+
+  def offset(n)
+    [self.begin(n), self.end(n)]
+  end
+
+  def post_match
+    @string[self.end(0), @string.length]
+  end
+
+  def pre_match
+    @string[0, self.begin(0)]
   end
 
   def push(start = nil, finish = nil)
@@ -78,6 +83,10 @@ class MatchData
     a = []
     @length.times { |i| a << self[i] }
     a
+  end
+
+  def to_s
+    self[0]
   end
 
   def matched_area
@@ -96,4 +105,9 @@ class MatchData
       "#<MatchData \"#{matched_area}\" #{capts.join(" ")}>"
     end 
   end
+
+  alias size length
+
+  #def names
+  #def values_at
 end
