@@ -1,6 +1,76 @@
 class Regexp
+  attr_reader :options
+  attr_reader :source
+
+  def self.quote(str)
+    self.escape(str)
+  end
+
   def self.compile(*args)
     self.new(*args)
+  end
+
+  def =~(str)
+    return nil unless str
+
+    m = self.match(str)
+    if m
+      m.begin(0)
+    else
+      nil
+    end
+  end
+
+  def ===(str)
+    unless str.is_a? String
+      if str.is_a? Symbol
+        str = str.to_s
+      else
+        return false
+      end
+    end
+    self.match(str) != nil
+  end
+
+  def casefold?
+    (@options & IGNORECASE) > 0
+  end
+
+  def self.escape(str)
+    escape_table = {
+      "\ " => '\\ ', # '?\ ' is a space
+      "["  => '\\[',
+      "]"  => '\\]', 
+      "{"  => '\\{', 
+      "}"  => '\\}', 
+      "("  => '\\(', 
+      ")"  => '\\)', 
+      "|"  => '\\|', 
+      "-"  => '\\-', 
+      "*"  => '\\*', 
+      "."  => '\\.', 
+      "\\" => '\\\\',
+      "?"  => '\\?', 
+      "+"  => '\\+', 
+      "^"  => '\\^', 
+      "$"  => '\\$', 
+      "#"  => '\\#', 
+      "\n" => '\\n', 
+      "\r" => '\\r', 
+      "\f" => '\\f', 
+      "\t" => '\\t', 
+      "\v" => '\\v', 
+    }
+
+    s = ""
+    str.each_char do |c|
+      if escape_table[c]
+        s += escape_table[c]
+      else
+        s += c
+      end
+    end
+    s
   end
 
   def named_captures
@@ -52,7 +122,7 @@ class MatchData
   end
 
   def begin(index)
-    @data[index][:start] if @data[index]
+    @data[index][:start] if @data && @data[index]
   end
 
   def captures
@@ -60,7 +130,7 @@ class MatchData
   end
 
   def end(index)
-    @data[index][:finish]
+    @data[index][:finish] if @data && @data[index]
   end
 
   def offset(n)
