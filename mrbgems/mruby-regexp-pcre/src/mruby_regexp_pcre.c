@@ -64,7 +64,8 @@ regexp_pcre_initialize(mrb_state *mrb, mrb_value self)
   DATA_TYPE(self) = &mrb_regexp_type;
   coptions = mrb_mruby_to_pcre_options(opt);
 
-  reg->re = pcre_compile(mrb_str_to_cstr(mrb, source), coptions, &errstr, &erroff, NULL);
+  source = mrb_str_new(mrb, RSTRING_PTR(source), RSTRING_LEN(source));
+  reg->re = pcre_compile(RSTRING_PTR(source), coptions, &errstr, &erroff, NULL);
   if (reg->re == NULL) {
     mrb_raisef(mrb, E_ARGUMENT_ERROR, "invalid regular expression");
   }
@@ -100,9 +101,9 @@ regexp_pcre_match(mrb_state *mrb, mrb_value self)
 
   nmatch = (nmatch + 1) * 3; /* capture(nmatch) + substring(1) * multiple 3 */
   match = mrb_malloc(mrb, sizeof(int) * nmatch);
-  rc = pcre_exec(reg->re, NULL, mrb_str_to_cstr(mrb, str), RSTRING_LEN(str), 0, 0, match, nmatch);
+  rc = pcre_exec(reg->re, NULL, RSTRING_PTR(str), RSTRING_LEN(str), 0, 0, match, nmatch);
   if (rc < 0) {
-    free(match);
+    mrb_free(mrb, match);
     return mrb_nil_value();
   }
 
@@ -115,6 +116,7 @@ regexp_pcre_match(mrb_state *mrb, mrb_value self)
   }
 
   mrb_iv_set(mrb, md, mrb_intern(mrb, "@regexp"), self);
+  // XXX: length
   mrb_iv_set(mrb, md, mrb_intern(mrb, "@length"), mrb_fixnum_value(rc));
   mrb_iv_set(mrb, md, mrb_intern(mrb, "@string"), mrb_str_dup(mrb, str));
 
