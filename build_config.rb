@@ -20,19 +20,23 @@ MRuby::Build.new do |conf|
   # Use standard Struct class
   conf.gem 'mrbgems/mruby-struct'
 
+  # Use Regexp class (libpcre)
+  conf.gem 'mrbgems/mruby-regexp-pcre'
+
   # Generate binaries
   # conf.bins = %w(mrbc mruby mirb)
   
   # C compiler settings
-  # conf.cc do |cc|
+  conf.cc do |cc|
   #   cc.command = ENV['CC'] || 'gcc'
   #   cc.flags = [ENV['CFLAGS'] || %w()]
-  #   cc.include_paths = ["#{root}/include"]
+     cc.include_paths = ["#{root}/include"]
+     cc.include_paths << "/opt/local/include"
   #   cc.defines = %w(DISABLE_GEMS)
   #   cc.option_include_path = '-I%s'
   #   cc.option_define = '-D%s'
   #   cc.compile_options = "%{flags} -MMD -o %{outfile} -c %{infile}"
-  # end
+  end
 
   # Linker settings
   # conf.linker do |linker|
