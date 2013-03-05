@@ -88,6 +88,21 @@ regexp_pcre_initialize(mrb_state *mrb, mrb_value self)
   }
   mrb_iv_set(mrb, self, mrb_intern(mrb, "@source"), source);
 
+  unsigned char *name_table;
+  int i, namecount, name_entry_size;
+
+  pcre_fullinfo(reg->re, NULL, PCRE_INFO_NAMECOUNT, &namecount);
+  if (namecount > 0) {
+    pcre_fullinfo(reg->re, NULL, PCRE_INFO_NAMETABLE, &name_table);
+    pcre_fullinfo(reg->re, NULL, PCRE_INFO_NAMEENTRYSIZE, &name_entry_size);
+    unsigned char *tabptr = name_table;
+    for (i = 0; i < namecount; i++) {
+      int n = (tabptr[0] << 8) | tabptr[1];
+      mrb_funcall(mrb, self, "name_push", 2, mrb_str_new(mrb, tabptr + 2, strlen(tabptr + 2)), mrb_fixnum_value(n));
+      tabptr += name_entry_size;
+    }
+  } 
+
   return self;
 }
 

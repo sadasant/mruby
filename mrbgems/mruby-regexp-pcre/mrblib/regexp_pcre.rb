@@ -2,6 +2,34 @@ class Regexp
   def self.compile(*args)
     self.new(*args)
   end
+
+  def named_captures
+    h = {}
+    if @names
+      @names.each do |k, v|
+        h[k.to_s] = [v + 1]
+      end
+    end
+    h
+  end
+
+  def names
+    if @names
+      ar = Array.new(@names.size)
+      @names.each do |k, v|
+        ar[v] = k.to_s
+      end
+      ar
+    else
+      []
+    end
+  end
+
+  # private
+  def name_push(name, index)
+    @names ||= {}
+    @names[name.to_sym] = index - 1
+  end
 end
 
 class MatchData
