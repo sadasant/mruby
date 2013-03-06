@@ -9,6 +9,10 @@
 #include <string.h>
 #include <pcre.h>
 
+#define MRUBY_REGEXP_IGNORECASE         0x01
+#define MRUBY_REGEXP_EXTENDED           0x02
+#define MRUBY_REGEXP_MULTILINE          0x04
+
 struct mrb_regexp_pcre {
   pcre *re;
 };
@@ -51,13 +55,13 @@ mrb_mruby_to_pcre_options(mrb_value options)
   } else if (mrb_fixnum_p(options)) {
     int nopt;
     nopt = mrb_fixnum(options);
-    if (nopt & 1) coptions |= PCRE_CASELESS;
-    if (nopt & 2) coptions |= PCRE_EXTENDED;
-    if (nopt & 4) coptions |= PCRE_MULTILINE;
+    if (nopt & MRUBY_REGEXP_IGNORECASE) coptions |= PCRE_CASELESS;
+    if (nopt & MRUBY_REGEXP_EXTENDED)   coptions |= PCRE_EXTENDED;
+    if (nopt & MRUBY_REGEXP_MULTILINE)  coptions |= PCRE_MULTILINE;
   } else if (mrb_string_p(options)) {
-      if (strchr(RSTRING_PTR(options), 'i')) coptions |= PCRE_CASELESS;
-      if (strchr(RSTRING_PTR(options), 'x')) coptions |= PCRE_EXTENDED;
-      if (strchr(RSTRING_PTR(options), 'm')) coptions |= PCRE_MULTILINE;
+    if (strchr(RSTRING_PTR(options), 'i')) coptions |= PCRE_CASELESS;
+    if (strchr(RSTRING_PTR(options), 'x')) coptions |= PCRE_EXTENDED;
+    if (strchr(RSTRING_PTR(options), 'm')) coptions |= PCRE_MULTILINE;
   } else if (mrb_type(options) == MRB_TT_TRUE) {
     coptions |= PCRE_CASELESS;
   }
@@ -70,9 +74,9 @@ mrb_pcre_to_mruby_options(int coptions)
 {
   int options = 0;
 
-  if (coptions & PCRE_CASELESS) options |= 1;
-  if (coptions & PCRE_EXTENDED) options |= 2;
-  if (coptions & PCRE_MULTILINE) options |= 4;
+  if (coptions & PCRE_CASELESS)  options |= MRUBY_REGEXP_IGNORECASE;
+  if (coptions & PCRE_EXTENDED)  options |= MRUBY_REGEXP_EXTENDED;
+  if (coptions & PCRE_MULTILINE) options |= MRUBY_REGEXP_MULTILINE;
 
   return options;
 }
@@ -194,7 +198,7 @@ regexp_equal(mrb_state *mrb, mrb_value self)
   }
 
   if (mrb_str_equal(mrb, mrb_iv_get(mrb, self, mrb_intern(mrb, "@source")),
-      mrb_iv_get(mrb, other, mrb_intern(mrb, "@source")))) {
+                         mrb_iv_get(mrb, other, mrb_intern(mrb, "@source")))) {
     return mrb_true_value();
   }
 
@@ -315,9 +319,9 @@ mrb_mruby_regexp_pcre_gem_init(mrb_state *mrb)
   mrb_define_method(mrb, re, "match", regexp_pcre_match, ARGS_REQ(1));
   mrb_define_method(mrb, re, "==", regexp_equal, ARGS_REQ(1));
 
-  mrb_define_const(mrb, re, "IGNORECASE", mrb_fixnum_value(1));
-  mrb_define_const(mrb, re, "EXTENDED", mrb_fixnum_value(2));
-  mrb_define_const(mrb, re, "MULTILINE", mrb_fixnum_value(4));
+  mrb_define_const(mrb, re, "IGNORECASE", mrb_fixnum_value(MRUBY_REGEXP_IGNORECASE));
+  mrb_define_const(mrb, re, "EXTENDED", mrb_fixnum_value(MRUBY_REGEXP_EXTENDED));
+  mrb_define_const(mrb, re, "MULTILINE", mrb_fixnum_value(MRUBY_REGEXP_MULTILINE));
 
   md = mrb_define_class(mrb, "MatchData", mrb->object_class);
   MRB_SET_INSTANCE_TT(md, MRB_TT_DATA);
