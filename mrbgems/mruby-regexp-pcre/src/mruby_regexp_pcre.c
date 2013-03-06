@@ -179,7 +179,7 @@ mrb_value
 mrb_matchdata_begin(mrb_state *mrb, mrb_value self)
 {
   struct mrb_matchdata *mrb_md;
-  mrb_int n;
+  mrb_int n, offs;
 
   mrb_md = (struct mrb_matchdata *)mrb_get_datatype(mrb, self, &mrb_matchdata_type);
   if (!mrb_md) return mrb_nil_value();
@@ -188,14 +188,18 @@ mrb_matchdata_begin(mrb_state *mrb, mrb_value self)
   if (n < 0 || n >= mrb_md->length)
     mrb_raisef(mrb, E_INDEX_ERROR, "index %d out of matches", n);
 
-  return mrb_fixnum_value((mrb_int)mrb_md->ovector[n*2]);
+  offs = mrb_md->ovector[n*2];
+  if (offs != -1)
+    return mrb_fixnum_value(offs);
+  else
+    return mrb_nil_value();
 }
 
 mrb_value
 mrb_matchdata_end(mrb_state *mrb, mrb_value self)
 {
   struct mrb_matchdata *mrb_md;
-  mrb_int n;
+  mrb_int n, offs;
 
   mrb_md = (struct mrb_matchdata *)mrb_get_datatype(mrb, self, &mrb_matchdata_type);
   if (!mrb_md) return mrb_nil_value();
@@ -204,7 +208,11 @@ mrb_matchdata_end(mrb_state *mrb, mrb_value self)
   if (n < 0 || n >= mrb_md->length)
     mrb_raisef(mrb, E_INDEX_ERROR, "index %d out of matches", n);
 
-  return mrb_fixnum_value((mrb_int)mrb_md->ovector[n*2 + 1]);
+  offs = mrb_md->ovector[n*2 + 1];
+  if (offs != -1)
+    return mrb_fixnum_value(offs);
+  else
+    return mrb_nil_value();
 }
 
 

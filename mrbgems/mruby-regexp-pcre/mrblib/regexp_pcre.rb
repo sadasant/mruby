@@ -48,19 +48,15 @@ class MatchData
     end
     b = self.begin(n)
     e = self.end(n)
-    @string[b, e-b]
-  end
-
-  def begin(index)
-    @data[index][:start] if @data[index]
+    if b and e
+      @string[b, e-b]
+    else
+      nil
+    end
   end
 
   def captures
-    self.to_a[1, @length]
-  end
-
-  def end(index)
-    @data[index][:finish]
+    self.to_a[1, @length-1]
   end
 
   def offset(n)
@@ -98,11 +94,11 @@ class MatchData
   def inspect
     capts = captures
     if capts.empty?
-      "#<MatchData \"#{matched_area}\">"
+      "#<MatchData \"#{self[0]}\">"
     else
       idx = 0 
       capts.map! {|capture| "#{idx += 1}:#{capture.inspect}"}
-      "#<MatchData \"#{matched_area}\" #{capts.join(" ")}>"
+      "#<MatchData \"#{self[0]}\" #{capts.join(" ")}>"
     end 
   end
 
