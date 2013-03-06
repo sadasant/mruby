@@ -60,6 +60,16 @@ class Regexp
     s
   end
 
+  def inspect
+    s = "/"
+    s += @source
+    s += "/"
+    s += "m" if @options & MULTILINE > 0
+    s += "i" if @options & IGNORECASE > 0
+    s += "x" if @options & EXTENDED > 0
+    s
+  end
+
   def self.escape(str)
     escape_table = {
       "\ " => '\\ ', # '?\ ' is a space
