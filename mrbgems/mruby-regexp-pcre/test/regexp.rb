@@ -206,6 +206,46 @@ if Object.const_defined?(:Regexp)
     re1 == re2
   end
 
+  assert('Regexp Literal (5): escape charactor') do
+    (/a\nb/ =~ "a\nb") == 0 and
+    (/a
+b/ =~ "a\nb") == 0 and
+    (%r!a\tb! =~ "a\tb") == 0 and
+    (%r!a\\tb! =~ "a\\tb") == 0
+  end
+
+  assert('Regexp Literal (6): matching test') do
+    (/^foo$/ =~ "foo") == 0 and # ^ and $
+    (/(\w)(\W)/ =~ "this is test!") == 3 and Regexp.last_match[1] == "s" and
+    (/\s/ =~ "this is test") == 4 and
+    (/\S/ =~ "this is test") == 0 and
+    (/\d/ =~ "abc123") == 3 and
+    (/\D/ =~ "abc123") == 0 and
+    (/\Aabc(.*)\Z/m =~ "abc\ntest") == 0 and Regexp.last_match[1] == "\ntest" and
+    # missing \z
+    # missing \b, \B
+    # missing \G
+    (/[a-z]/ =~ "0123abc") == 4 and 
+    (/(a.*)/ =~ "bbbaaa") == 3 and Regexp.last_match[1] == "aaa" and
+    (/(a.*?)/ =~ "bbbaaa") == 3 and Regexp.last_match[1] == "a" and
+    (/(a+)/ =~ "bbbaaa") == 3 and Regexp.last_match[1] == "aaa" and
+    (/(a+?)/ =~ "bbbaaa") == 3 and Regexp.last_match[1] == "a" and
+    (/(foo){1,}/ =~ "barfoofoofoofoo") == 3 and Regexp.last_match[0] == "foofoofoofoo" and
+    (/(foo){1,}?/ =~ "barfoofoofoofoo") == 3 and Regexp.last_match[0] == "foo" and
+    (/(\d.?)/ =~ "abc0123") == 3 and Regexp.last_match[1] == "01" and
+    (/(\d.??)/ =~ "abc0123") == 3 and Regexp.last_match[1] == "0" and
+    (/hoge|fuga/ =~ "hoge") == 0 and
+    (/(.)/ =~ "abcdef") == 0 and Regexp.last_match[0] == "a" and
+    (/(?#comment)test/ =~ "test") == 0 and
+    (/(?:abc)/ =~ "abc") == 0 and Regexp.last_match[1] == nil and
+    (/((?=\d{2,4}3)\d{8})/ =~ "asdf1234567890") == 4 and
+    (/(?!000)\d\d\d/ =~ "0001234") == 1 and
+    (/(?<=\d)/ =~ "abc123def") == 4 and
+    (/(?<!foo)bar/ =~ 'foobarbazbarfoo') == 9 and
+    (/A(?i)a(?-i)A/ =~ "AaA") == 0 and
+    (/A(?i:a)A/ =~ "AaA") == 0
+  end
+
   assert('Regexp option "i"', '15.2.15.1') do
     (/abcdef/i =~ "ABCDEF") == 0 and
     (/abcdef/i =~ "AAAAAA") == nil
