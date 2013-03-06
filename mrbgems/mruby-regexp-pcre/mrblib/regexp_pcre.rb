@@ -41,6 +41,25 @@ class Regexp
     (@options & IGNORECASE) > 0
   end
 
+  def to_s
+    s = "(?"
+    s += "m" if @options & MULTILINE > 0
+    s += "i" if @options & IGNORECASE > 0
+    s += "x" if @options & EXTENDED > 0
+
+    if @options & MULTILINE == 0 or @options & IGNORECASE == 0 or @options & EXTENDED == 0
+      s += "-"
+      s += "m" if @options & MULTILINE == 0
+      s += "i" if @options & IGNORECASE == 0
+      s += "x" if @options & EXTENDED == 0
+    end
+
+    s += ":"
+    s += @source
+    s += ")"
+    s
+  end
+
   def self.escape(str)
     escape_table = {
       "\ " => '\\ ', # '?\ ' is a space
