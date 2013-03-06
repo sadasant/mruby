@@ -142,7 +142,8 @@ regexp_pcre_match(mrb_state *mrb, mrb_value self)
     return mrb_nil_value();
   }
 
-  mrb_iv_set(mrb, self, mrb_intern(mrb, "@last_match"), mrb_nil_value());
+  /* XXX: need current scope */
+  mrb_obj_iv_set(mrb, (struct RObject *)mrb_class_real(RDATA(self)->c), mrb_intern(mrb, "@last_match"), mrb_nil_value());
 
   c = mrb_class_get(mrb, "MatchData");
   md = mrb_funcall(mrb, mrb_obj_value(c), "new", 0);
@@ -154,7 +155,8 @@ regexp_pcre_match(mrb_state *mrb, mrb_value self)
   mrb_iv_set(mrb, md, mrb_intern(mrb, "@length"), mrb_fixnum_value(matchlen));
   mrb_iv_set(mrb, md, mrb_intern(mrb, "@regexp"), self);
   mrb_iv_set(mrb, md, mrb_intern(mrb, "@string"), mrb_str_dup(mrb, str));
-  mrb_iv_set(mrb, self, mrb_intern(mrb, "@last_match"), md);
+  /* XXX: need current scope */
+  mrb_obj_iv_set(mrb, (struct RObject *)mrb_class_real(RDATA(self)->c), mrb_intern(mrb, "@last_match"), md);
 
   return md;
 }
