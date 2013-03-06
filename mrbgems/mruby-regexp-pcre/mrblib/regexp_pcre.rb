@@ -108,7 +108,6 @@ class Regexp
 end
 
 class MatchData
-  attr_reader :length
   attr_reader :regexp
   attr_reader :string
 
@@ -116,9 +115,9 @@ class MatchData
     # XXX: if n is_a? Range
     # XXX: when we have 2nd argument...
     if n < 0
-      n += @length
+      n += self.length
       return nil if n < 0
-    elsif n >= @length
+    elsif n >= self.length
       return nil
     end
     b = self.begin(n)
@@ -131,7 +130,7 @@ class MatchData
   end
 
   def captures
-    self.to_a[1, @length-1]
+    self.to_a[1, self.length-1]
   end
 
   def offset(n)
@@ -152,7 +151,7 @@ class MatchData
 
   def to_a
     a = []
-    @length.times { |i| a << self[i] }
+    self.length.times { |i| a << self[i] }
     a
   end
 

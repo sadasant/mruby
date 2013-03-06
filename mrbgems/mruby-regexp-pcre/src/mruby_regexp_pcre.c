@@ -152,7 +152,6 @@ regexp_pcre_match(mrb_state *mrb, mrb_value self)
   mrb_md->ovector = match;
   mrb_md->length = matchlen;
 
-  mrb_iv_set(mrb, md, mrb_intern(mrb, "@length"), mrb_fixnum_value(matchlen));
   mrb_iv_set(mrb, md, mrb_intern(mrb, "@regexp"), self);
   mrb_iv_set(mrb, md, mrb_intern(mrb, "@string"), mrb_str_dup(mrb, str));
   /* XXX: need current scope */
@@ -211,19 +210,58 @@ mrb_matchdata_init(mrb_state *mrb, mrb_value self)
 }
 
 mrb_value
-mrb_matchdata_begin(mrb_state *mrb, mrb_value self)
+mrb_matchdata_init_copy(mrb_state *mrb, mrb_value copy)
+{
+  mrb_sym sym;
+  mrb_value src;
+  struct mrb_matchdata *mrb_md_copy, *mrb_md_src;
+  int vecsize;
+
+  mrb_get_args(mrb, "o", &src);
+
+  if (mrb_obj_equal(mrb, copy, src)) return copy;
+  if (!mrb_obj_is_instance_of(mrb, src, mrb_obj_class(mrb, copy))) {
+    mrb_raise(mrb, E_TYPE_ERROR, "wrong argument class");
+  }
+
+  mrb_md_copy = (struct mrb_matchdata *)mrb_malloc(mrb, sizeof(*mrb_md_copy));
+  mrb_md_src  = DATA_PTR(src);
+
+  if (mrb_md_src->ovector == NULL) {
+    mrb_md_copy->ovector = NULL;
+    mrb_md_copy->length = -1;
+  } else {
+    vecsize = sizeof(int) * mrb_md_src->length * 3;
+    mrb_md_copy->ovector = mrb_malloc(mrb, vecsize);
+    memcpy(mrb_md_copy->ovector, mrb_md_src->ovector, vecsize);
+    mrb_md_copy->length = mrb_md_src->length;
+  }
+
+  if (DATA_PTR(copy) != NULL) {
+    mrb_matchdata_free(mrb, DATA_PTR(copy));
+  }
+  DATA_PTR(copy) = mrb_md_copy;
+
+  mrb_iv_set(mrb, copy, mrb_intern(mrb, "@regexp"), mrb_iv_get(mrb, src, mrb_intern(mrb, "@regexp")));
+  mrb_iv_set(mrb, copy, mrb_intern(mrb, "@string"), mrb_iv_get(mrb, src, mrb_intern(mrb, "@string")));
+
+  return copy;
+}
+
+static mrb_value
+matchdata_beginend(mrb_state *mrb, mrb_value self, int beginend)
 {
   struct mrb_matchdata *mrb_md;
-  mrb_int n, offs;
+  mrb_int i, offs;
 
   mrb_md = (struct mrb_matchdata *)mrb_get_datatype(mrb, self, &mrb_matchdata_type);
   if (!mrb_md) return mrb_nil_value();
 
-  mrb_get_args(mrb, "i", &n);
-  if (n < 0 || n >= mrb_md->length)
-    mrb_raisef(mrb, E_INDEX_ERROR, "index %d out of matches", n);
+  mrb_get_args(mrb, "i", &i);
+  if (i < 0 || i >= mrb_md->length)
+    mrb_raisef(mrb, E_INDEX_ERROR, "index %d out of matches", i);
 
-  offs = mrb_md->ovector[n*2];
+  offs = mrb_md->ovector[i*2 + beginend];
   if (offs != -1)
     return mrb_fixnum_value(offs);
   else
@@ -231,25 +269,27 @@ mrb_matchdata_begin(mrb_state *mrb, mrb_value self)
 }
 
 mrb_value
+mrb_matchdata_begin(mrb_state *mrb, mrb_value self)
+{
+  return matchdata_beginend(mrb, self, 0);
+}
+
+mrb_value
 mrb_matchdata_end(mrb_state *mrb, mrb_value self)
 {
+  return matchdata_beginend(mrb, self, 1);
+}
+
+mrb_value
+mrb_matchdata_length(mrb_state *mrb, mrb_value self)
+{
   struct mrb_matchdata *mrb_md;
-  mrb_int n, offs;
 
   mrb_md = (struct mrb_matchdata *)mrb_get_datatype(mrb, self, &mrb_matchdata_type);
   if (!mrb_md) return mrb_nil_value();
 
-  mrb_get_args(mrb, "i", &n);
-  if (n < 0 || n >= mrb_md->length)
-    mrb_raisef(mrb, E_INDEX_ERROR, "index %d out of matches", n);
-
-  offs = mrb_md->ovector[n*2 + 1];
-  if (offs != -1)
-    return mrb_fixnum_value(offs);
-  else
-    return mrb_nil_value();
+  return mrb_fixnum_value(mrb_md->length);
 }
-
 
 void
 mrb_mruby_regexp_pcre_gem_init(mrb_state *mrb)
@@ -271,8 +311,10 @@ mrb_mruby_regexp_pcre_gem_init(mrb_state *mrb)
   MRB_SET_INSTANCE_TT(md, MRB_TT_DATA);
 
   mrb_define_method(mrb, md, "initialize", mrb_matchdata_init, ARGS_REQ(1));
+  mrb_define_method(mrb, md, "initialize_copy", mrb_matchdata_init_copy, ARGS_REQ(1));
   mrb_define_method(mrb, md, "begin", mrb_matchdata_begin, ARGS_REQ(1));
   mrb_define_method(mrb, md, "end", mrb_matchdata_end, ARGS_REQ(1));
+  mrb_define_method(mrb, md, "length", mrb_matchdata_length, ARGS_NONE());
 }
 
 void
