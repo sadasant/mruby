@@ -43,15 +43,11 @@ class Regexp
 
   def to_s
     s = "(?"
-    s += "m" if @options & MULTILINE > 0
-    s += "i" if @options & IGNORECASE > 0
-    s += "x" if @options & EXTENDED > 0
+    s += get_enable_option_string
 
     if @options & MULTILINE == 0 or @options & IGNORECASE == 0 or @options & EXTENDED == 0
       s += "-"
-      s += "m" if @options & MULTILINE == 0
-      s += "i" if @options & IGNORECASE == 0
-      s += "x" if @options & EXTENDED == 0
+      s += get_disable_option_string
     end
 
     s += ":"
@@ -64,9 +60,23 @@ class Regexp
     s = "/"
     s += @source
     s += "/"
+    s += get_enable_option_string
+    s
+  end
+
+  def get_enable_option_string
+    s = ""
     s += "m" if @options & MULTILINE > 0
     s += "i" if @options & IGNORECASE > 0
     s += "x" if @options & EXTENDED > 0
+    s
+  end
+
+  def get_disable_option_string
+    s = ""
+    s += "m" if @options & MULTILINE == 0
+    s += "i" if @options & IGNORECASE == 0
+    s += "x" if @options & EXTENDED == 0
     s
   end
 
