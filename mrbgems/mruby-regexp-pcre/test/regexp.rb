@@ -205,4 +205,25 @@ if Object.const_defined?(:Regexp)
     re1.source == str and
     re1 == re2
   end
+
+  assert('Regexp option "i"', '15.2.15.1') do
+    (/abcdef/i =~ "ABCDEF") == 0 and
+    (/abcdef/i =~ "AAAAAA") == nil
+  end
+  
+  assert('Regexp option "m"', '15.2.15.1') do
+    msg = "Random Line 1\n"
+    msg += "Random Line 2\n"
+    msg += "From: person@example.com\n"
+    msg += "Subject: This is the subject line\n"
+
+    (/(From:.*Subject.*?)/m =~ msg) != nil
+  end
+
+  assert('Regexp option "x"', '15.2.15.1') do
+    (/foo # comment
+    bar/x =~ "foobar") == 0 and
+    (/foo # comment
+    bar/x =~ "foo\nbar") == nil
+  end
 end
