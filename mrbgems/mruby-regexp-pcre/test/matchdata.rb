@@ -37,8 +37,6 @@ end
 
 assert('MatchData#offset', '15.2.16.3.7') do
   m = /(foo)(bar)(BAZ)?/.match("foobarbaz")
-  p m.offset(2)
-  p m.begin(2), m.end(2), m.offset(1)
   m.offset(1) == [0, 3] and m.offset(2) == [3, 6] and m.offset(3) == [nil, nil]
 end
 
@@ -70,4 +68,20 @@ end
 assert('MatchData#to_a', '15.2.16.3.13') do
   m = /bar/.match("foobarbaz")
   m.to_s == "bar"
+end
+
+assert('MatchData#names') do
+  m = /(?<foo>.)(?<bar>.)(?<baz>.)/.match("hoge")
+  m.names == ["foo", "bar", "baz"]
+end
+
+assert('MatchData#regexp') do
+  m = /a.*b/.match("abc")
+  m.regexp == /a.*b/
+end
+
+assert('MatchData#values_at') do
+  m = /(foo)(bar)(baz)/.match("foobarbaz")
+  m.values_at(0, 1, 2, 3, 4) == ["foobarbaz", "foo", "bar", "baz", nil] and
+  m.values_at(-1, -2, -3, -4, -5) == ["baz", "bar", "foo", nil, nil]
 end

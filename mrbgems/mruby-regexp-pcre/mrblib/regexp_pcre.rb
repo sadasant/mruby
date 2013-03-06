@@ -133,6 +133,20 @@ class MatchData
     self.to_a[1, self.length-1]
   end
 
+  def inspect
+    if self.length == 1
+      "#<MatchData \"#{self[0]}\">"
+    else
+      idx = 0 
+      capts = self.captures.map! { |s| "#{idx += 1}:#{s.inspect}" }
+    end 
+    "#<MatchData \"#{self[0]}\"#{capts}>"
+  end
+
+  def names
+    self.regexp.names
+  end
+
   def offset(n)
     [self.begin(n), self.end(n)]
   end
@@ -159,25 +173,9 @@ class MatchData
     self[0]
   end
 
-  def matched_area
-    x = @data[0][:start]
-    y = @data[0][:finish]
-    @string[x, y]
-  end
-
-  def inspect
-    capts = captures
-    if capts.empty?
-      "#<MatchData \"#{self[0]}\">"
-    else
-      idx = 0 
-      capts.map! {|capture| "#{idx += 1}:#{capture.inspect}"}
-      "#<MatchData \"#{self[0]}\" #{capts.join(" ")}>"
-    end 
+  def values_at(*args)
+    args.map { |i| if i == -self.length then nil else self[i] end }
   end
 
   alias size length
-
-  #def names
-  #def values_at
 end
