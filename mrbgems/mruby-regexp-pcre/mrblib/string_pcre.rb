@@ -93,4 +93,28 @@ class String
     end
     self.replace(result)
   end
+
+  alias_method :old_scan, :scan
+  def scan(*args, &blk)
+    return old_scan(*args) if args[0].class == String
+
+    s = self
+    ret = []
+    last_match = nil
+    while m = args[0].match(s)
+      break if !m || m.size == 0
+      return r if m.end(0) == 0
+
+      val = (m.size == 1 ? m[0] : m.captures)
+      s = m.post_match
+
+      if blk
+        blk.call(val)
+      else
+        ret << val
+      end
+    end
+
+    ret
+  end
 end
