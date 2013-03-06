@@ -161,6 +161,35 @@ regexp_pcre_match(mrb_state *mrb, mrb_value self)
   return md;
 }
 
+static mrb_value
+regexp_equal(mrb_state *mrb, mrb_value self)
+{
+  mrb_value other;
+  struct mrb_regexp_pcre *self_reg, *other_reg;
+
+  mrb_get_args(mrb, "o", &other);
+  if (mrb_obj_equal(mrb, self, other)) {
+    return mrb_true_value();
+  }
+
+  if (mrb_type(other) != MRB_TT_DATA || DATA_TYPE(other) != &mrb_regexp_type) {
+    return mrb_false_value();
+  }
+
+  self_reg = (struct mrb_regexp_pcre *)DATA_PTR(self);
+  other_reg = (struct mrb_regexp_pcre *)DATA_PTR(other);
+  if (!self_reg || !other_reg) {
+    mrb_raise(mrb, E_RUNTIME_ERROR, "Invalid Regexp");
+  }
+
+  if (mrb_str_equal(mrb, mrb_iv_get(mrb, self, mrb_intern(mrb, "@source")),
+      mrb_iv_get(mrb, other, mrb_intern(mrb, "@source")))) {
+    return mrb_true_value();
+  }
+
+  return mrb_false_value();
+}
+
 mrb_value
 mrb_matchdata_init(mrb_state *mrb, mrb_value self)
 {
@@ -232,6 +261,7 @@ mrb_mruby_regexp_pcre_gem_init(mrb_state *mrb)
 
   mrb_define_method(mrb, re, "initialize", regexp_pcre_initialize, ARGS_REQ(1) | ARGS_OPT(2));
   mrb_define_method(mrb, re, "match", regexp_pcre_match, ARGS_REQ(1));
+  mrb_define_method(mrb, re, "==", regexp_equal, ARGS_REQ(1));
 
   mrb_define_const(mrb, re, "IGNORECASE", mrb_fixnum_value(1));
   mrb_define_const(mrb, re, "EXTENDED", mrb_fixnum_value(2));
