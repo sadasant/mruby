@@ -87,6 +87,7 @@ regexp_pcre_initialize(mrb_state *mrb, mrb_value self)
     mrb_raisef(mrb, E_ARGUMENT_ERROR, "invalid regular expression");
   }
   mrb_iv_set(mrb, self, mrb_intern(mrb, "@source"), source);
+  mrb_iv_set(mrb, self, mrb_intern(mrb, "@options"), mrb_fixnum_value(coptions));
 
   unsigned char *name_table;
   int i, namecount, name_entry_size;
@@ -141,6 +142,8 @@ regexp_pcre_match(mrb_state *mrb, mrb_value self)
     return mrb_nil_value();
   }
 
+  mrb_iv_set(mrb, self, mrb_intern(mrb, "@last_match"), mrb_nil_value());
+
   c = mrb_class_get(mrb, "MatchData");
   md = mrb_funcall(mrb, mrb_obj_value(c), "new", 0);
 
@@ -151,6 +154,7 @@ regexp_pcre_match(mrb_state *mrb, mrb_value self)
   mrb_iv_set(mrb, md, mrb_intern(mrb, "@length"), mrb_fixnum_value(matchlen));
   mrb_iv_set(mrb, md, mrb_intern(mrb, "@regexp"), self);
   mrb_iv_set(mrb, md, mrb_intern(mrb, "@string"), mrb_str_dup(mrb, str));
+  mrb_iv_set(mrb, self, mrb_intern(mrb, "@last_match"), md);
 
   return md;
 }
@@ -226,6 +230,10 @@ mrb_mruby_regexp_pcre_gem_init(mrb_state *mrb)
 
   mrb_define_method(mrb, re, "initialize", regexp_pcre_initialize, ARGS_REQ(1) | ARGS_OPT(2));
   mrb_define_method(mrb, re, "match", regexp_pcre_match, ARGS_REQ(1));
+
+  mrb_define_const(mrb, re, "IGNORECASE", mrb_fixnum_value(1));
+  mrb_define_const(mrb, re, "EXTENDED", mrb_fixnum_value(2));
+  mrb_define_const(mrb, re, "MULTILINE", mrb_fixnum_value(4));
 
   md = mrb_define_class(mrb, "MatchData", mrb->object_class);
   MRB_SET_INSTANCE_TT(md, MRB_TT_DATA);
