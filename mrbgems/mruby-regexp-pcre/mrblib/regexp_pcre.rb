@@ -1,6 +1,7 @@
 class Regexp
   attr_reader :options
   attr_reader :source
+  attr_reader :last_match
 
   def self.quote(str)
     self.escape(str)
@@ -8,6 +9,10 @@ class Regexp
 
   def self.compile(*args)
     self.new(*args)
+  end
+
+  def self.last_match
+    @last_match
   end
 
   def =~(str)
