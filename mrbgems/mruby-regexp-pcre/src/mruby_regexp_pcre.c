@@ -65,6 +65,18 @@ mrb_mruby_to_pcre_options(mrb_value options)
   return coptions;
 }
 
+static int
+mrb_pcre_to_mruby_options(int coptions)
+{
+  int options = 0;
+
+  if (coptions & PCRE_CASELESS) options |= 1;
+  if (coptions & PCRE_EXTENDED) options |= 2;
+  if (coptions & PCRE_MULTILINE) options |= 4;
+
+  return options;
+}
+
 mrb_value
 regexp_pcre_initialize(mrb_state *mrb, mrb_value self)
 {
@@ -87,7 +99,7 @@ regexp_pcre_initialize(mrb_state *mrb, mrb_value self)
     mrb_raisef(mrb, E_ARGUMENT_ERROR, "invalid regular expression");
   }
   mrb_iv_set(mrb, self, mrb_intern(mrb, "@source"), source);
-  mrb_iv_set(mrb, self, mrb_intern(mrb, "@options"), mrb_fixnum_value(coptions));
+  mrb_iv_set(mrb, self, mrb_intern(mrb, "@options"), mrb_fixnum_value(mrb_pcre_to_mruby_options(coptions)));
 
   unsigned char *name_table;
   int i, namecount, name_entry_size;
