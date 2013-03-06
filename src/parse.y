@@ -3496,17 +3496,9 @@ read_escape(parser_state *p)
     return c;
 
   case 'b':	/* backspace */
-    if (p->regexp) {
-      tokadd(p, '\\');
-      return 'b';
-    }
     return '\010';
 
   case 's':	/* space */
-    if (p->regexp) {
-      tokadd(p, '\\');
-      return 's';
-    }
     return ' ';
 
   case 'M':
@@ -3544,9 +3536,6 @@ read_escape(parser_state *p)
     return '\0';
 
   default:
-    if (p->regexp) {
-      tokadd(p, '\\');
-    }
     return c;
   }
 }
@@ -3566,6 +3555,10 @@ parse_string(parser_state *p, int term)
       c = nextc(p);
       if (c == term) {
 	tokadd(p, c);
+      } else if (p->regexp) {
+	pushback(p, c);
+	tokadd(p, '\\');
+	tokadd(p, nextc(p));
       }
       else {
 	pushback(p, c);
