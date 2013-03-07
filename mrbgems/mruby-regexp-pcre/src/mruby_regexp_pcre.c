@@ -127,14 +127,13 @@ mrb_value
 regexp_pcre_match(mrb_state *mrb, mrb_value self)
 {
   struct mrb_matchdata *mrb_md;
-  int i, rc;
-  int ccount, matchlen, nmatch;
+  int rc;
+  int ccount, matchlen;
   int *match;
   struct RClass *c;
   mrb_value md, str;
   mrb_int pos;
   struct mrb_regexp_pcre *reg;
-  mrb_value args[2];
 
   reg = (struct mrb_regexp_pcre *)mrb_get_datatype(mrb, self, &mrb_regexp_type);
   if (!reg)
@@ -228,7 +227,6 @@ mrb_matchdata_init(mrb_state *mrb, mrb_value self)
 mrb_value
 mrb_matchdata_init_copy(mrb_state *mrb, mrb_value copy)
 {
-  mrb_sym sym;
   mrb_value src;
   struct mrb_matchdata *mrb_md_copy, *mrb_md_src;
   int vecsize;
