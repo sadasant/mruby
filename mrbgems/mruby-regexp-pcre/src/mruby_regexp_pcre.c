@@ -115,7 +115,7 @@ regexp_pcre_initialize(mrb_state *mrb, mrb_value self)
     unsigned char *tabptr = name_table;
     for (i = 0; i < namecount; i++) {
       int n = (tabptr[0] << 8) | tabptr[1];
-      mrb_funcall(mrb, self, "name_push", 2, mrb_str_new(mrb, tabptr + 2, strlen(tabptr + 2)), mrb_fixnum_value(n));
+      mrb_funcall(mrb, self, "name_push", 2, mrb_str_new(mrb, (const char *)(tabptr + 2), strlen((const char *)tabptr + 2)), mrb_fixnum_value(n));
       tabptr += name_entry_size;
     }
   } 
