@@ -177,9 +177,9 @@ class MatchData
       "#<MatchData \"#{self[0]}\">"
     else
       idx = 0 
-      capts = self.captures.map! { |s| "#{idx += 1}:#{s.inspect}" }
+      capts = self.captures.map! { |s| "#{idx += 1}:#{s.inspect}" }.join(' ')
+      "#<MatchData \"#{self[0]}\" #{capts}>"
     end 
-    "#<MatchData \"#{self[0]}\"#{capts}>"
   end
 
   def names
