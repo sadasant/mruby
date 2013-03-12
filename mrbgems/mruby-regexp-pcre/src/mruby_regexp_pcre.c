@@ -45,6 +45,7 @@ mrb_matchdata_free(mrb_state *mrb, void *ptr)
 static struct mrb_data_type mrb_regexp_type = { "Regexp", mrb_regexp_free };
 static struct mrb_data_type mrb_matchdata_type = { "MatchData", mrb_matchdata_free };
 
+
 static int
 mrb_mruby_to_pcre_options(mrb_value options)
 {
@@ -132,7 +133,7 @@ regexp_pcre_match(mrb_state *mrb, mrb_value self)
   int *match;
   struct RClass *c;
   mrb_value md, str;
-  mrb_int pos;
+  mrb_int i, pos;
   struct mrb_regexp_pcre *reg;
 
   reg = (struct mrb_regexp_pcre *)mrb_get_datatype(mrb, self, &mrb_regexp_type);
@@ -171,6 +172,17 @@ regexp_pcre_match(mrb_state *mrb, mrb_value self)
   mrb_iv_set(mrb, md, mrb_intern(mrb, "@string"), mrb_str_dup(mrb, str));
   /* XXX: need current scope */
   mrb_obj_iv_set(mrb, (struct RObject *)mrb_class_real(RDATA(self)->c), mrb_intern(mrb, "@last_match"), md);
+
+  mrb_gv_set(mrb, mrb_intern(mrb, "$~"), md);
+  mrb_gv_set(mrb, mrb_intern(mrb, "$&"), mrb_funcall(mrb, md, "to_s", 0));
+  mrb_gv_set(mrb, mrb_intern(mrb, "$`"), mrb_funcall(mrb, md, "pre_match", 0));
+  mrb_gv_set(mrb, mrb_intern(mrb, "$'"), mrb_funcall(mrb, md, "post_match", 0));
+
+  for (i = 1; i < 10; i++) {
+    char sym[8];
+    snprintf(sym, sizeof(sym), "$%d", i);
+    mrb_gv_set(mrb, mrb_intern(mrb, sym), mrb_funcall(mrb, md, "[]", 1, mrb_fixnum_value(i)));
+  }
 
   return md;
 }
