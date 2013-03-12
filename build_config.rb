@@ -32,6 +32,7 @@ MRuby::Build.new do |conf|
   #   cc.flags = [ENV['CFLAGS'] || %w()]
      cc.include_paths = ["#{root}/include"]
      cc.include_paths << "/opt/local/include"
+     cc.include_paths << "/usr/local/include"
   #   cc.defines = %w(DISABLE_GEMS)
   #   cc.option_include_path = '-I%s'
   #   cc.option_define = '-D%s'
@@ -46,6 +47,7 @@ MRuby::Build.new do |conf|
   #   linker.libraries = %w()
   #   linker.flags_after_libraries = []
   #   linker.library_paths = []
+     linker.library_paths = ["/usr/local/lib"]
   #   linker.option_library = '-l%s'
   #   linker.option_library_path = '-L%s'
   #   linker.link_options = "%{flags} -o %{outfile} %{objs} %{libs}"
