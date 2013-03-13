@@ -53,6 +53,86 @@ class String
     end
   end
 
+  alias_method :old_split, :split
+  def split(*args, &blk)
+    return [] if self.empty?
+
+    if args[0].nil? or args[0].class.to_s == 'String'
+      return blk ? old_split(*args) { |x| blk.call(x) } : old_split(*args)
+    end
+
+    if args.size < 2
+      limited = false
+      limit = 0
+    else
+      limit = args[1].to_i
+
+      if limit > 0
+        return [self.dup] if limit == 1
+        limited = true
+      else
+        tail_empty = true
+        limited = false
+      end
+    end
+
+    pattern = args[0]
+    result = []
+    # case '//'
+    if pattern.source.empty?
+      index = 0
+      while true
+        break if limited and limit - result.size <= 1
+        break if index + 1 >= self.length
+
+        result << self[index]
+        index += 1
+      end
+      result << self[index..-1]
+    else
+      start = 0
+      last_match = nil
+      last_match_end = 0
+
+      while m = pattern.match(self, start)
+        break if limited and limit - result.size <= 1
+
+        unless m[0].empty? and (m.begin(0) == last_match_end)
+          result << m.pre_match[last_match_end..-1]
+          result.push(*m.captures)
+        end
+        
+        if m[0].empty?
+          start += 1
+        elsif last_match and last_match[0].empty?
+          start = m.end(0) + 1
+        else
+          start = m.end(0)
+        end
+
+        last_match = m
+        last_match_end = m.end(0) || 0
+
+        break if self.length <= start 
+      end
+
+      if last_match
+        result << last_match.post_match
+      elsif result.empty?
+        result << self.dup
+      end
+    end
+
+    # Trim (not specified in the second argument)
+    if !result.empty? and (limit.nil? || limit == 0)
+      while result.last.nil? or result.last.empty?
+        result.pop
+      end
+    end
+
+    result
+  end
+
   # private
   def to_sub_replacement!(match)
     result = ""
