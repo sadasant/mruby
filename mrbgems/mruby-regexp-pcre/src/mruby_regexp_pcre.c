@@ -152,7 +152,7 @@ regexp_pcre_match(mrb_state *mrb, mrb_value self)
   }
   matchlen = ccount + 1;
   match = mrb_malloc(mrb, sizeof(int) * matchlen * 3);
-  rc = pcre_exec(reg->re, NULL, RSTRING_PTR(str) + pos, RSTRING_LEN(str) - pos, 0, 0, match, matchlen * 3);
+  rc = pcre_exec(reg->re, NULL, RSTRING_PTR(str), RSTRING_LEN(str), pos, 0, match, matchlen * 3);
   if (rc < 0) {
     mrb_free(mrb, match);
     return mrb_nil_value();
