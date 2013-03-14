@@ -133,6 +133,63 @@ class String
     result
   end
 
+  alias_method :old_slice, :slice
+  alias_method :old_square_brancket, :[]
+
+  def [](*args)
+    return old_square_brancket(*args) unless args[0].class == Regexp
+
+    if args.size == 2
+      match = args[0].match(self)
+      if match
+        if args[1] == 0
+          str = match[0]
+        else
+          str = match.captures[args[1] - 1]
+        end
+        return str
+      end
+    end
+
+    match_data = args[0].match(self)
+    if match_data
+      result = match_data.to_s
+      return result
+    end
+  end
+
+  alias_method :slice, :[]
+  # XXX: alias_method :old_slice!, :slice!
+  def slice!(*args)
+    if args.size < 2
+      result = slice(*args)
+      nth = args[0]
+
+      if nth.class == Regexp
+        lm = Regexp.last_match
+        self[nth] = '' if result
+        Regexp.last_match = lm
+      else
+        self[nth] = '' if result
+      end
+    else
+      result = slice(*args)
+
+      nth = args[0]
+      len = args[1]
+
+      if nth.class == Regexp
+        lm = Regexp.last_match
+        self[nth, len] = '' if result
+        Regexp.last_match = lm
+      else
+        self[nth, len] = '' if result
+      end
+    end
+
+    result
+  end
+
   # private
   def to_sub_replacement!(match)
     result = ""
@@ -196,5 +253,90 @@ class String
     end
 
     ret
+  end
+
+
+  #
+  # XXX: Need pull-request to http://github.com/mruby/mruby mrbgems/mruby-string-ext
+  #
+  def []=(*args)
+    index = args[0]
+    if args.size != 3
+      val = args[1]
+      count = nil   
+    else
+      count = args[1]
+      val = args[2]
+    end
+
+    case index
+    when Fixnum
+      index += self.size if index < 0
+
+      raise IndexError, "index #{index} out of string" if index < 0 or index > self.size
+      raise IndexError, "unable to find charactor at: #{index}" unless bi = index
+
+      if count
+        count = count.to_i
+        raise IndexError, "count is negative" if count < 0
+
+        total = index + count
+        bs = total - bi
+      else
+        bs = index == size ? 0 : (index + 1) - bi
+      end
+
+      splice bi, bs, val
+    when String
+      raise IndexError, "string not matched" unless start = self.index(index)
+
+      splice start, index.size, val
+    when Range
+      start = index.first.to_i
+      start += self.size if start < 0
+
+      raise RangeError, "#{index.first} is out of range" unless bi = start
+      stop = index.last.to_i
+      stop += self.size if stop < 0
+      stop -= 1 if index.exclude_end?
+
+      if stop < start
+        bs = 0
+      else
+        bs =  stop + 1 - bi
+      end
+
+      splice bi, bs, val
+    when Regexp
+      count = count || 0
+
+      if match = index.match(self)
+        ms = match.size
+      else
+        raise IndexError, "regexp does not match"
+      end
+
+      count += ms if count < 0 and -count < ms
+      raise IndexError, "index #{count} out of match bounds" unless count < ms and count >= 0
+
+      bi = match.begin(count)
+      bs = match.end(count) - bi
+
+      splice bi, bs, val
+    else
+      index = index.to_i
+
+      if count
+        return self[index, count] = val
+      else
+        return self[index] = val
+      end
+    end
+
+    return val
+  end
+
+  def splice(start , count, val)
+    self.replace(self[0...start] + val + self[(start + count)..-1])
   end
 end
