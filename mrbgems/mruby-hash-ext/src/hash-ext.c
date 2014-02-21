@@ -20,27 +20,20 @@
  *   h.values_at("cow", "cat")  #=> ["bovine", "feline"]
  */
 
-mrb_value
-mrb_hash_values_at(mrb_state *mrb, int argc, mrb_value *argv, mrb_value hash)
-{
-    mrb_value result = mrb_ary_new_capa(mrb, argc);
-    long i;
-
-    for (i=0; i<argc; i++) {
-        mrb_ary_push(mrb, result, mrb_hash_get(mrb, hash, argv[i]));
-    }
-    return result;
-}
-
 static mrb_value
 hash_values_at(mrb_state *mrb, mrb_value hash)
 {
-  mrb_value *argv;
-  int argc;
+  mrb_value *argv, result;
+  int argc, i, ai;
 
   mrb_get_args(mrb, "*", &argv, &argc);
-
-  return mrb_hash_values_at(mrb, argc, argv, hash);
+  result = mrb_ary_new_capa(mrb, argc);
+  ai = mrb_gc_arena_save(mrb);
+  for (i = 0; i < argc; i++) {
+    mrb_ary_push(mrb, result, mrb_hash_get(mrb, hash, argv[i]));
+    mrb_gc_arena_restore(mrb, ai);
+  }
+  return result;
 }
 
 void
