@@ -39,9 +39,7 @@ command and see the list of branches:
 
 ## mruby home-page
 
-mruby's website is not launched yet but we are actively working on it.
-
-The URL of the mruby home-page will be:
+The URL of the mruby home-page is:
 
   http://www.mruby.org/
 
