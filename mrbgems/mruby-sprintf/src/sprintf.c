@@ -653,7 +653,7 @@ retry:
       case '\n':
       case '\0':
         p--;
-
+        /* fallthrough */
       case '%':
         if (flags != FNONE) {
           mrb_raise(mrb, E_ARGUMENT_ERROR, "invalid format character - %");
