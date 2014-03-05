@@ -19,11 +19,11 @@ static size_t utf8len_tab[256] =
   3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,6,6,1,1,
 };
 
-static size_t
+static mrb_int
 utf8len(unsigned char* p)
 {
-  size_t    len;
-  int    i;
+  mrb_int len;
+  int     i;
 
   if (*p == 0)
     return 1;
@@ -34,10 +34,10 @@ utf8len(unsigned char* p)
   return len;
 }
 
-static size_t
+static mrb_int
 mrb_utf8_strlen(mrb_value str)
 {
-  size_t total = 0;
+  mrb_int total = 0;
   unsigned char* p = (unsigned char*) RSTRING_PTR(str);
   unsigned char* e = p + RSTRING_LEN(str);
   while (p<e) {
@@ -50,7 +50,7 @@ mrb_utf8_strlen(mrb_value str)
 static mrb_value
 mrb_str_size(mrb_state *mrb, mrb_value str)
 {
-  size_t size = mrb_utf8_strlen(str);
+  mrb_int size = mrb_utf8_strlen(str);
 
   return mrb_fixnum_value(size);
 }
@@ -136,7 +136,7 @@ static mrb_value
 str_substr(mrb_state *mrb, mrb_value str, mrb_int beg, mrb_int len)
 {
   mrb_value str2;
-  int len8 = RSTRING_LEN_UTF8(str);
+  mrb_int len8 = RSTRING_LEN_UTF8(str);
 
   if (len < 0) return mrb_nil_value();
   if (len8 == 0) {
@@ -250,10 +250,10 @@ mrb_str_aref_m(mrb_state *mrb, mrb_value str)
 static mrb_value
 mrb_str_reverse_bang(mrb_state *mrb, mrb_value str)
 {
-  int utf8_len = mrb_utf8_strlen(str);
+  mrb_int utf8_len = mrb_utf8_strlen(str);
   if (utf8_len > 1) {
-    int len = RSTRING_LEN(str);
-    char *buf = (char *)mrb_malloc(mrb, len);
+    mrb_int len = RSTRING_LEN(str);
+    char *buf = (char *)mrb_malloc(mrb, (size_t)len);
     unsigned char* p = (unsigned char*)buf;
     unsigned char* e = (unsigned char*)buf + len;
     unsigned char* r = (unsigned char*)RSTRING_END(str);
@@ -262,7 +262,7 @@ mrb_str_reverse_bang(mrb_state *mrb, mrb_value str)
     mrb_str_modify(mrb, mrb_str_ptr(str));
     
     while (p<e) {
-      int clen = utf8len(p);
+      mrb_int clen = utf8len(p);
       r -= clen;
       memcpy(r, p, clen);
       p += clen;
