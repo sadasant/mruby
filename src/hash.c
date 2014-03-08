@@ -1001,6 +1001,7 @@ static mrb_value
 hash_equal(mrb_state *mrb, mrb_value hash1, mrb_value hash2, int eql)
 {
   khash_t(ht) *h1, *h2;
+  mrb_bool eq;
 
   if (mrb_obj_equal(mrb, hash1, hash2)) return mrb_true_value();
   if (!mrb_hash_p(hash2)) {
@@ -1008,8 +1009,6 @@ hash_equal(mrb_state *mrb, mrb_value hash1, mrb_value hash2, int eql)
           return mrb_false_value();
       }
       else {
-        mrb_bool eq;
-
         if (eql) {
           eq = mrb_eql(mrb, hash2, hash1);
         }
@@ -1035,7 +1034,11 @@ hash_equal(mrb_state *mrb, mrb_value hash1, mrb_value hash2, int eql)
       key = kh_key(h1,k1);
       k2 = kh_get(ht, mrb, h2, key);
       if (k2 != kh_end(h2)) {
-        if (mrb_eql(mrb, kh_value(h1,k1), kh_value(h2,k2))) {
+        if (eql)
+          eq = mrb_eql(mrb, kh_value(h1,k1), kh_value(h2,k2));
+        else
+          eq = mrb_equal(mrb, kh_value(h1,k1), kh_value(h2,k2));
+        if (eq) {
           continue; /* next key */
         }
       }
