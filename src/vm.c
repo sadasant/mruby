@@ -1369,7 +1369,8 @@ mrb_context_run(mrb_state *mrb, struct RProc *proc, mrb_value self, unsigned int
           }
         }
       L_RESCUE:
-        irep = ci->proc->body.irep;
+        proc = ci->proc;
+        irep = proc->body.irep;
         pool = irep->pool;
         syms = irep->syms;
         regs = mrb->c->stack = ci[1].stackent;
