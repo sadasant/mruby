@@ -141,7 +141,8 @@ assert('Float#round', '15.2.9.3.12') do
   nan = 0.0/0.0
   assert_raise(FloatDomainError){ nan.round }
   assert_raise(FloatDomainError){ nan.round(-1) }
-  assert_true(nan.round(1).nan?)
+  nan2 = nan.round(1)
+  assert_true(nan2 != nan2)
 end
 
 assert('Float#to_f', '15.2.9.3.13') do
